@@ -1,0 +1,1 @@
+python examples/controller.py --stage 3 --test_dataset humaneval --adapter_path ./save/lora_2e4 --humaneval_result_path ./code_eval/lora
