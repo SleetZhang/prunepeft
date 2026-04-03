@@ -57,6 +57,7 @@ import wandb
 # from reproduce.utils import model_inference
 from examples.data import DATASET_MAP
 from examples.utils import (
+    clear_device_cache,
     find_all_linear_modules,
     initialize_text_to_text_model,
     model_inference,
@@ -475,6 +476,8 @@ def main(args=None):
     # Extract parameters for backward compatibility
     dataset = args.dataset
     adapter_types = args.adapter_types
+    if isinstance(adapter_types, str):
+        adapter_types = [t.strip() for t in adapter_types.split(",") if t.strip()]
     lora_rank = args.lora_rank
     lora_alpha = args.lora_alpha
     lora_dropout = args.lora_dropout
@@ -769,7 +772,8 @@ def main(args=None):
 
         # Cleanup
         del peft_model, process_info, rankings, base_model
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
+        clear_device_cache()
 
     def _analyze_mixed_blocks(rankings, num_layers):
         import re
@@ -1021,7 +1025,8 @@ def main(args=None):
 
             # 清理当前轮次的临时变量以释放显存
             del model, process_info, rankings
-            torch.cuda.empty_cache()
+            #torch.cuda.empty_cache()
+            clear_device_cache()
 
             # 打印当前剪枝后的模型结构
             # if accelerator.is_local_main_process:
@@ -1250,6 +1255,7 @@ def main(args=None):
                                 f.write(f"Test Dataset: {test_dataset}\n")
                                 f.write(f"Accuracy: {accuracy:.4f}\n")
                                 f.write("-" * 20 + "\n")
+                else:
                     logger.error("❌ 无法进行评估：模型未正确加载")
 
     if 0 in stages:
