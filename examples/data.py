@@ -7,6 +7,23 @@ import logging
 import hashlib
 log = logging.getLogger(__name__)
 
+def _resolve_llama_tokenizer_source() -> tuple[str, bool]:
+    """
+    Resolve tokenizer source path/id for Llama-2-7b.
+
+    Priority:
+    1) PRUNEPEFT_TOKENIZER_PATH env var
+    2) /root/autodl-tmp/ckpts/pretrained/Llama-2-7b-hf
+    3) meta-llama/Llama-2-7b-hf (remote)
+    """
+    local_candidates = [
+        os.environ.get("PRUNEPEFT_TOKENIZER_PATH", "").strip(),
+        "/root/autodl-tmp/ckpts/pretrained/Llama-2-7b-hf",
+    ]
+    for path in local_candidates:
+        if path and os.path.isdir(path):
+            return path, True
+    return "meta-llama/Llama-2-7b-hf", False
 
 def cache_to_disk(root_datadir="data_cache"):
     def decorator(func):
@@ -291,8 +308,10 @@ def load_meta_math_5k(max_tokens=512):
     dataset = load_dataset("meta-math/MetaMathQA", split="train")
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained("/root/ckpt/pretrained/Llama-2-7b-hf")
-
+    #tokenizer = AutoTokenizer.from_pretrained("/root/ckpt/pretrained/Llama-2-7b-hf")
+    tokenizer_src, local_only = _resolve_llama_tokenizer_source()
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_src, local_files_only=local_only)
+    
     def preprocess(data):
         return {
             "x": f'Q: {data["query"]}\nA: ',
@@ -338,8 +357,9 @@ def load_meta_math(max_tokens=512):
     dataset = load_dataset("meta-math/MetaMathQA", split="train")
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    tokenizer_src, local_only = _resolve_llama_tokenizer_source()
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_src, local_files_only=local_only)
     def preprocess(data):
         return {
             "x": f'Q: {data["query"]}\nA: ',
@@ -385,8 +405,9 @@ def load_meta_math_full(max_tokens=512):
     dataset = load_dataset("meta-math/MetaMathQA", split="train")
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    tokenizer_src, local_only = _resolve_llama_tokenizer_source()
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_src, local_files_only=local_only)
     def preprocess(data):
         return {
             "x": f'Q: {data["query"]}\nA: ',
@@ -421,8 +442,9 @@ def load_flan_v2(max_tokens=512):
     dataset = load_dataset("SirNeural/flan_v2", split="train", streaming=True)
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    tokenizer_src, local_only = _resolve_llama_tokenizer_source()
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_src, local_files_only=local_only)
     def preprocess(data):
         return {
             "x": data["inputs"],
@@ -466,7 +488,8 @@ def load_codefeedback(max_tokens=1024):
     from transformers import AutoTokenizer
 
     # tokenizer = AutoTokenizer.from_pretrained("/root/ckpt/pretrained/Llama-2-7b-hf",local_files_only=True)
-    model_id = "/root/loraga/ckpts/pretrained/Llama-2-7b-hf"
+    #model_id = "/root/loraga/ckpts/pretrained/Llama-2-7b-hf"
+    model_id, _ = _resolve_llama_tokenizer_source()
     model_type = "CausalLM"
     model_dtype = "bf16"
     from examples.utils import (
@@ -520,8 +543,9 @@ def load_wizardlm(max_tokens=1024):
     dataset = load_dataset("silk-road/Wizard-LM-Chinese-instruct-evol", split="train")
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    tokenizer_src, local_only = _resolve_llama_tokenizer_source()
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_src, local_files_only=local_only)
     def preprocess(data):
         y = data["output"]
         return {
