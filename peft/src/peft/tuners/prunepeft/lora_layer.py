@@ -387,12 +387,21 @@ class LoraLayer(BaseTunerLayer):
         lora_B = self.lora_B[adapter_name].weight
         place_on_cpu = self.ephemeral_gpu_offload and (lora_A.device.type == "cpu" or lora_B.device.type == "cpu")
         if self.ephemeral_gpu_offload:
-            if lora_A.device.type == "cuda":
-                lora_B = lora_B.to(lora_A.device)
+            #if lora_A.device.type == "cuda":
+             #   lora_B = lora_B.to(lora_A.device)
+            if lora_A.device.type != "cpu":
+                target_device = lora_A.device
+            elif lora_B.device.type != "cpu":
+                target_device = lora_B.device
+            elif hasattr(torch, "npu") and torch.npu.is_available():
+                target_device = torch.device("npu")
             else:
-                if lora_B.device.type != "cuda":
-                    lora_B = lora_B.to("cuda")
-                lora_A = lora_A.to(lora_B.device)
+                #if lora_B.device.type != "cuda":
+                 #   lora_B = lora_B.to("cuda")
+                #lora_A = lora_A.to(lora_B.device)
+                target_device = torch.device("cuda")
+            lora_A = lora_A.to(target_device)
+            lora_B = lora_B.to(target_device)
         scaling = self.scaling[adapter_name]
         dora_layer.update_layer(
             base_layer=self.get_base_layer(), lora_A=lora_A, lora_B=lora_B, scaling=scaling, place_on_cpu=place_on_cpu
