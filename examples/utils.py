@@ -25,10 +25,20 @@ def seed_everything(seed: int):
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
-
+    #torch.cuda.manual_seed(seed)
+    #torch.backends.cudnn.deterministic = True
+    #torch.backends.cudnn.benchmark = True
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = True
+        
+def clear_device_cache():
+    """Clear cache on available accelerator backend."""
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    elif hasattr(torch, "npu") and torch.npu.is_available():
+        torch.npu.empty_cache()
 
 def find_all_linear_modules(model) -> tp.List[str]:
     r"""
@@ -187,7 +197,7 @@ def initialize_text_to_text_model(
             model_config["quantization_config"] = quant_4bit_config
         case _:
             raise ValueError("Wrong dtype")
-    model_config['use_safetensors'] = False
+    #model_config['use_safetensors'] = False
     model = auto_model_class.from_pretrained(**model_config)
     if tokenizer:
         log.info(f"Using custom tokenizer {tokenizer}")
@@ -313,6 +323,7 @@ def model_inference(
     max_source_length: str = 768,
     max_target_length: str = 256,
 ):
+    device = next(model.parameters()).device
     if model_type == "CausalLM":
         inputs = tokenizer(
             input_text + " ",
@@ -321,7 +332,8 @@ def model_inference(
             truncation=True,
             return_token_type_ids=False,
         )
-        inputs = {k: v.cuda() for k, v in inputs.items()}
+        #inputs = {k: v.cuda() for k, v in inputs.items()}
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -337,7 +349,8 @@ def model_inference(
             skip_special_tokens=True,
         )
     elif model_type == "ConditionalGeneration":
-        inputs = tokenizer(input_text, return_tensors="pt").to("cuda")
+        #inputs = tokenizer(input_text, return_tensors="pt").to("cuda")
+        inputs = tokenizer(input_text, return_tensors="pt").to(device)
         with torch.no_grad():
             outputs = model.generate(**inputs, max_new_tokens=max_target_length)
         pred_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
