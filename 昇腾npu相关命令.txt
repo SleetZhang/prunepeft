@@ -1,2 +1,0 @@
-查看cann版本命令：
-cat /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/ascend_toolkit_install.info | grep version
